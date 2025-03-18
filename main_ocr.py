@@ -36,7 +36,7 @@ def extrator_valor_total(imagem, coordenadas):#
                 valor_total = pdf_ocr(valor_total)
                 valor_total = re.findall(r'(\d{1,3}\.?\d{1,3}\.?\s?\,?\d{1,2})',valor_total)        
                 valor_total  = valor_total[0].strip()
-                valor_total = valor_total.replace('.','').replace(",",".")
+                valor_total = valor_total.replace('.','').replace(",",".").replace(" ", "")
                 return valor_total
         except:
                 return valor_total
@@ -48,7 +48,7 @@ def extrator_volume_total(imagem, coordenadas):#     #QUANTIDADE
                 volume_total = pdf_ocr(volume_total)
                 volume_total = re.findall(r'\s?(\d+[\.?A-a\,?]\d+)\s?',volume_total)
                 volume_total = volume_total[0].strip()
-                volume_total = volume_total.replace('.','').replace(",",".")
+                volume_total = volume_total.replace('.','').replace(",",".").replace(" ", "")
                 volume_total = round(float(volume_total),5)
                 volume_total = str(volume_total)
                 
@@ -116,7 +116,7 @@ def extrator_icms (imagem, coordenadas):#
                 #valor_icms.show()
                 valor_icms = pdf_ocr(valor_icms)
                 valor_icms = re.findall(r'\s?(\d+\.?\,?\d+\.?\,?\d+\.?\,\s?\d+)',valor_icms)
-                valor_icms  = valor_icms[0].strip()
+                valor_icms  = valor_icms[0].strip().replace(" ", "")
                 
                 return valor_icms
         except:
@@ -126,66 +126,81 @@ def extrator_icms (imagem, coordenadas):#
 def main(pdf_file):
     imagem = pdf_to_image(pdf_file)
 
-    cnpj = extrator_cnpj (imagem, 'cnpj')
+    campos_faltantes = []
+
+    cnpj = extrator_cnpj(imagem, 'cnpj')
     if cnpj == False or len(cnpj) != 14:
-        cnpj = extrator_cnpj (imagem, 'cnpj_ajustado')
-        if cnpj == False or len (cnpj) != 14:
-           cnpj = extrator_cnpj (imagem, 'cnpj_ajustado2')               #continuar daqui FDS
+        cnpj = extrator_cnpj(imagem, 'cnpj_ajustado')
+        if cnpj == False or len(cnpj) != 14:
+            cnpj = extrator_cnpj(imagem, 'cnpj_ajustado2')
+    if not cnpj or len(cnpj) != 14:
+        campos_faltantes.append('cnpj')
     
     valor_total = extrator_valor_total(imagem, 'valor_total')
-    if extrator_valor_total == False:
-            valor_total = extrator_valor_total(imagem, 'valor_total_justado')
+    if valor_total == False:
+        valor_total = extrator_valor_total(imagem, 'valor_total_justado')
+    if not valor_total:
+        campos_faltantes.append('valor_total')
     
     volume_total = extrator_volume_total(imagem, 'volume_total')
     if volume_total == False:
-                volume_total = extrator_volume_total(imagem, 'volume_total_ajustado')
-                if volume_total == False:
-                        volume_total = extrator_volume_total(imagem, 'volume_total_ajustado2' )
+        volume_total = extrator_volume_total(imagem, 'volume_total_ajustado')
+        if volume_total == False:
+            volume_total = extrator_volume_total(imagem, 'volume_total_ajustado2')
+    if not volume_total:
+        campos_faltantes.append('volume_total')
 
     data_emissao = extrator_data_emissao(imagem, 'data_emissao')
     if data_emissao == False:
-            data_emissao = extrator_data_emissao(imagem, 'data_emissao_ajustado')
+        data_emissao = extrator_data_emissao(imagem, 'data_emissao_ajustado')
+    if not data_emissao:
+        campos_faltantes.append('data_emissao')
     
     data_inicio = extrator_data_inicio(imagem, 'data_inicio')
     if data_inicio == False:
-                data_inicio = extrator_data_inicio(imagem, 'data_inicio_ajustado')               
-                if data_inicio == False:
-                        data_inicio = extrator_data_inicio(imagem, 'data_inicio_ajustado2')
+        data_inicio = extrator_data_inicio(imagem, 'data_inicio_ajustado')
+        if data_inicio == False:
+            data_inicio = extrator_data_inicio(imagem, 'data_inicio_ajustado2')
+    if not data_inicio:
+        campos_faltantes.append('data_inicio')
                          
     data_fim = extrator_data_fim(imagem, 'data_fim')
     if data_fim == False:
-                data_fim = extrator_data_fim(imagem, 'data_fim_ajustado')
-                if data_fim == False:
-                        data_fim = extrator_data_fim(imagem, 'data_fim_ajustado2')
+        data_fim = extrator_data_fim(imagem, 'data_fim_ajustado')
+        if data_fim == False:
+            data_fim = extrator_data_fim(imagem, 'data_fim_ajustado2')
+    if not data_fim:
+        campos_faltantes.append('data_fim')
 
     numero_fatura = extrator_numero_fatura(imagem, 'numero_fatura')
     if numero_fatura == False:
-                numero_fatura = extrator_numero_fatura(imagem, 'numero_fatura_ajustado')
+        numero_fatura = extrator_numero_fatura(imagem, 'numero_fatura_ajustado')
+    if not numero_fatura:
+        campos_faltantes.append('numero_fatura')
 
     valor_icms = extrator_icms(imagem, 'valor_icms')
     if valor_icms == False:
-                valor_icms = extrator_icms(imagem, 'valor_icms_ajustado')
+        valor_icms = extrator_icms(imagem, 'valor_icms_ajustado')
+    if not valor_icms:
+        campos_faltantes.append('valor_icms')
     
-    if not cnpj or not valor_total or not volume_total or not data_emissao or not data_inicio or not data_fim or not numero_fatura or not valor_icms:
-        print('Fatura não movida devido a dados incompletos.')
+    if campos_faltantes:
+        print(f'Fatura não movida devido a dados incompletos: {", ".join(campos_faltantes)}')
     else: 
         mover_faturas_lidas(pdf_file, diretorio_destino)
         verificar = verificar_download(cnpj, data_inicio, data_fim, caminho_excel)
         if verificar:
-                data_frame = dados_excel(cnpj, valor_total, volume_total, data_emissao, data_inicio, data_fim, numero_fatura, valor_icms, correcao_pcs, DIST)
-                adicionar_dados_excel(caminho_excel, data_frame)
+            data_frame = dados_excel(cnpj, valor_total, volume_total, data_emissao, data_inicio, data_fim, numero_fatura, valor_icms, correcao_pcs, DIST)
+            adicionar_dados_excel(caminho_excel, data_frame)
         else:
-                print('Dados já inseridos!')
+            print('Dados já inseridos!')
+
 # Exemplo de uso
 corte = corte_gas_verde()
 file_path = r'G:\QUALIDADE\Códigos\Leitura de Faturas Gás\Códigos\Gás Verde\Faturas'
 diretorio_destino = r'G:\QUALIDADE\Códigos\Leitura de Faturas Gás\Códigos\Gás Verde\Lidas'
 
 for arquivo in os.listdir(file_path):
-        if arquivo.endswith('.pdf'):
-                arquivo = rf'G:\QUALIDADE\Códigos\Leitura de Faturas Gás\Códigos\Gás Verde\Faturas\{arquivo}'
+    if arquivo.endswith('.pdf'):
+        arquivo = rf'G:\QUALIDADE\Códigos\Leitura de Faturas Gás\Códigos\Gás Verde\Faturas\{arquivo}'
         main(arquivo)
-#texto_extraido = pdf_to_image(pdf_path)
-
-#print(texto_extraido)
-# Exemplo de uso

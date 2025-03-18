@@ -26,7 +26,8 @@ def corte_gas_verde():
     'numero_fatura': (3500, 200, 4000, 400),
     'numero_fatura_ajustado': (000, 430, 3750, 590), 
     
-    'valor_icms': (1000, 2660, 1610, 2800)
+    'valor_icms': (1000, 2660, 1610, 2800),
+    'valor_icms_ajustado': (1040, 2700, 1620, 2790)
     }
     return corte
 caminho_excel = r'G:\QUALIDADE\Códigos\Leitura de Faturas Gás\Códigos\00 Faturas Lidas\GAS VERDE.xlsx'
